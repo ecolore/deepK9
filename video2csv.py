@@ -74,6 +74,9 @@ def copy_csv_files_to_folder(source_folder, target_folder):
 def gen_training_data(basedir):
     
     files = list_files_recursive(basedir)
+    print(files)
+    print('\n')
+    
     for unfilter_csv in files:
         if '_normalized' in unfilter_csv: return 
         print(unfilter_csv)
@@ -87,31 +90,25 @@ def gen_training_data(basedir):
         std_data=std_csv.auto_run(new_name)
 
 def crea1proj():
-    global new_project
-    if new_project==True:
-        
-            config_path, train_config_path = deeplabcut.create_pretrained_project(
+    print(video_source_folder)
+    config_path, train_config_path = deeplabcut.create_pretrained_project(
             'topic',
             'joseph',
-            videos=[video_path],  # Create the labeled video for all the videos with an .mp4 extension in a directory.
+            videos=[video_source_folder],  # Create the labeled video for all the videos with an .mp4 extension in a directory.
             videotype='.mp4',
             model="full_dog",
             analyzevideo=True,
             createlabeledvideo=True,
             copy_videos=True
             )
-    else:
-      config_path=os.path.join(project_path,'config.yaml')
         
     return config_path  
    
 
 def main(args):
 
-    global gen_labeld_video,gen_training_data,new_project
+    global gen_labeld_video,gen_train_data#,new_project
 
-    if args.new:
-      new_project=True
    
     if args.gen_video:
        
@@ -132,19 +129,42 @@ if __name__ == "__main__":
     video_source_folder='myvideos'
     output_csv_folder = 'csv_dataset'
 
+
+    parser = argparse.ArgumentParser(description="Analyze the video ")
+    # Boolean flag for gen_video 
+    parser.add_argument("--gen_video", action="store_true", help="Generate labeled video.")
+    # Boolean flag for gen training dataset with normalization 
+    parser.add_argument("--gen_train_data", action="store_true", help="Generate training dataset with normalization.")
+    parser.add_argument("--new",action="store_true", help="Create project config")
+    args = parser.parse_args()
+
+
     project_path=os.path.dirname(os.path.abspath(__file__)) #r'E:\DeepLabCut\topic-joseph-2023-10-01'
-    print('project_path=',project_path)
+    print('project_path=',project_path+'\n')
     #project path and config_path
-    config_path=crea1proj()
+
+    if args.new:
+      new_project=True
+      config_path=crea1proj()
+    else:
+      config_path=os.path.join(project_path,'config.yaml')
+      
 
     data_path=os.path.join(os.getcwd(),video_source_folder)
     output_csv_path=os.path.join(os.getcwd(),output_csv_folder)
 
-    csv_files = glob.glob(output_csv_path + '/*000.csv')
-
+    dlc_prefix_path='topic-joseph-'
+    matching_folders = [folder for folder in os.listdir(project_path) if folder.startswith(dlc_prefix_path) and os.path.isdir(os.path.join(project_path, folder))]
+    
+    print('DLC built path=',matching_folders)#########
+    csv_files = glob.glob(matching_folders[0]+'/videos' + '/*000.csv')
+    print(csv_files)
+    
     if csv_files:
       newest_csv = max(csv_files, key=os.path.getmtime)
-      print("Newest CSV file:", newest_csv)
+    else:
+      newest_csv=None
+    print("Newest CSV file:", newest_csv)
     
     
 #    print('project_path:',project_path)
@@ -152,15 +172,7 @@ if __name__ == "__main__":
     print('video_source_folder:',data_path)
     print('output_csv_folder:',output_csv_path)
 
-    parser = argparse.ArgumentParser(description="Analyze the video ")
 
-    # Boolean flag for gen_video 
-    parser.add_argument("--gen_video", action="store_true", help="Generate labeled video.")
-    # Boolean flag for gen training dataset with normalization 
-    parser.add_argument("--gen_train_data", action="store_true", help="Generate training dataset with normalization.")
-    parser.add_argument("--new",action="store_true", help="Create project config")
-
-    args = parser.parse_args()
     
     main(args)
 
